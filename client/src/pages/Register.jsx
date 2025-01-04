@@ -49,8 +49,9 @@ function Register() {
               htmlFor="username"
               className="block text-sm font-medium text-gray-700"
             >
-              UserName
+              Username
             </label>
+            
             <input
               id="name"
               name="name"
