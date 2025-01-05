@@ -4,7 +4,9 @@ import toast from "react-hot-toast";
 import { BASE_URL } from "../helper/PortUrl";
 import { useAuth } from "../context/authContext";
 import { IoMdNotifications } from "react-icons/io";
-import { FaUserFriends } from "react-icons/fa";
+
+import FriendSuggestion from "../components/FriendSuggestion";
+import Logout from "../components/Logout";
 
 function UserDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,13 +14,11 @@ function UserDashboard() {
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(false);
-
-
+  const [showRequests, setShowRequests] = useState(false); 
 
   const [auth] = useAuth();
 
   useEffect(() => {
-    
     fetchFriendRequests();
     fetchFriends();
   }, [auth]);
@@ -39,14 +39,11 @@ function UserDashboard() {
 
   const fetchFriendRequests = async () => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/users/friend-requests`,
-        {
-          headers: {
-            Authorization: `Bearer ${auth.token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${BASE_URL}/api/users/friend-requests`, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      });
       setFriendRequests(response.data.requests || []);
     } catch (error) {
       console.error("Error fetching friend requests:", error);
@@ -146,7 +143,7 @@ function UserDashboard() {
         setFriendRequests((prevRequests) =>
           prevRequests.filter((request) => request._id !== friendId)
         );
-        fetchFriends(); 
+        fetchFriends();
       } else {
         toast.error(response.data.message || "Failed to accept request.");
       }
@@ -180,140 +177,184 @@ function UserDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-blue-50 flex">
-   
-    <div className="w-1/4 h-screen  bg-gradient-to-r from-white to-blue-50 rounded-xl shadow-lg p-6 overflow-y-auto sticky top-10 left-10">
-      <div className="flex gap-2 items-center mb-2">
-        <h2 className="text-xl font-semibold text-gray-800">Friends</h2>
-        <FaUserFriends className="text-blue-500 text-xl" />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-blue-50 flex flex-col md:flex-row">
+      <div className="absolute top-6 right-6 z-20">
+        <Logout />
       </div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        Total Friends ({friends.length})
-      </h2>
-      <div className="space-y-4">
-        {friends.length > 0 ? (
-          friends.map((friend) => <div key={friend._id}>{friend.username}</div>)
-        ) : (
-          <p className="text-gray-600">You have no friends yet.</p>
-        )}
-      </div>
-      <hr />
-      <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-4">
-        Friend Requests
-      </h2>
-      <div className="space-y-4">
-        {friendRequests.length > 0 ? (
-          friendRequests.map((request) => (
-            <div key={request._id} className="flex items-center space-x-4">
-              <img
-                className="w-16 h-16 rounded-full"
-                src={request.profilePicture || "https://via.placeholder.com/100"}
-                alt={request.username}
-              />
-              <div>
-                <p className="font-semibold text-gray-800">{request.username}</p>
-                <p className="text-sm text-gray-600">{request.email}</p>
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => acceptFriendRequest(request._id)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-full"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => declineFriendRequest(request._id)}
-                  className="px-4 py-2 bg-red-500 text-white rounded-full"
-                >
-                  Decline
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-600">No pending friend requests.</p>
-        )}
-      </div>
-    </div>
-  
-   
-    <div className="flex-grow max-w-4xl w-full flex flex-col items-center px-4  overflow-y-auto">
-      {/* Sticky Search Bar */}
-    <div className="sticky top-10  mb-10  bg-gradient-to-r from-white to-blue-100 z-10 w-full max-w-lg">
-      <form
-        onSubmit={handleSearch}
-        className="w-full flex space-x-3 items-center bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-      >
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-grow rounded-full px-5 py-3 border focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-600"
-        />
-        <button
-          type="submit"
-          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-full hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-300"
-        >
-          Search
-        </button>
-      </form>
-    </div>
-  
-      {loading && (
-        <p className="mt-6 text-lg font-medium text-gray-600 animate-pulse">
-          Searching...
-        </p>
-      )}
-  
-      {!loading && searchResults.length > 0 && (
-        <div className="w-full max-w-3xl  bg-gradient-to-r from-blue-50 to-white rounded-xl shadow-lg p-6 mt-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Search Results
+
+      <div className="w-full md:w-1/3 h-auto md:h-screen bg-gradient-to-r from-white to-blue-50 rounded-xl shadow-lg p-6 overflow-y-auto sticky mb-8 md:mb-0">
+        <div className="flex gap-2 items-center mb-2">
+          <h2 className="text-xl font-semibold text-gray-800">Friends</h2>
+        </div>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Total Friends ({friends.length})
+        </h2>
+        <div className="space-y-4">
+          {friends.length > 0 ? (
+            friends.map((friend) => <div key={friend._id}>{friend.username}</div>)
+          ) : (
+            <p className="text-gray-600">You have no friends yet.</p>
+          )}
+        </div>
+        <hr />
+      
+        <div className="hidden md:block">
+          <h2 className="text-xl font-semibold text-gray-800 mt-6 mb-4">
+            Friend Requests
           </h2>
-          <ul className="space-y-4">
-            {searchResults.map((user) => (
-              <li
-                key={user._id}
-                className="flex items-center justify-between  bg-gradient-to-r from-white to-blue-100 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center space-x-3">
+          <div className="space-y-4">
+            {friendRequests.length > 0 ? (
+              friendRequests.map((request) => (
+                <div key={request._id} className="flex items-center space-x-4">
                   <img
-                    className="w-12 h-12 rounded-full"
-                    src={user.profilePicture || "https://via.placeholder.com/100"}
-                    alt="User"
+                    className="w-16 h-16 rounded-full"
+                    src={request.profilePicture || "https://via.placeholder.com/100"}
+                    alt={request.username}
                   />
                   <div>
-                    <p className="font-bold text-gray-800">{user.username}</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <p className="font-semibold text-gray-800">{request.username}</p>
+                    <p className="text-sm text-gray-600">{request.email}</p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => acceptFriendRequest(request._id)}
+                      className="px-4 py-2 bg-green-500 text-white rounded-full"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => declineFriendRequest(request._id)}
+                      className="px-4 py-2 bg-red-500 text-white rounded-full"
+                    >
+                      Decline
+                    </button>
                   </div>
                 </div>
-                <div className="flex space-x-4">
-                  {user.requestSent ? (
-                    <button
-                      onClick={() => cancelFriendRequest(user._id)}
-                      className="px-5 py-2 font-medium rounded-full bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg transition-all"
-                    >
-                      Cancel Request
-                    </button>
-                  ) : user.isFriend ? (
-                    <span className="text-green-600 font-medium">Friend</span>
-                  ) : (
-                    <button
-                      onClick={() => sendFriendRequest(user._id)}
-                      className="px-5 py-2 font-medium rounded-full bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg transition-all"
-                    >
-                      Add Friend
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+              ))
+            ) : (
+              <p className="text-gray-600">No pending friend requests.</p>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      <div className="flex-grow max-w-4xl w-full flex flex-col items-center px-4 overflow-y-auto">
+        
+        <div className="sticky top-10 mb-10 bg-gradient-to-r from-white to-blue-100 z-10 w-full max-w-lg">
+          <form
+            onSubmit={handleSearch}
+            className="w-full flex space-x-3 items-center bg-transparent p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow"
+          >
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-grow rounded-full px-5 py-3 border focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-600"
+            />
+            <button
+              type="submit"
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-full hover:from-blue-600 hover:to-purple-600 shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-300"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+
+        {loading && (
+          <div className="w-full text-center">
+            <p className="text-lg text-gray-600">Searching...</p>
+          </div>
+        )}
+
+        {!loading && searchResults.length > 0 && (
+          <div className="w-full">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Search Results</h2>
+            <ul className="space-y-4">
+              {searchResults.map((user) => (
+                <li key={user._id} className="flex justify-between items-center p-4 rounded-lg bg-white shadow-md hover:bg-blue-50">
+                  <div className="flex items-center space-x-4">
+                    <img
+                      className="w-12 h-12 rounded-full"
+                      src={user.profilePicture || "https://via.placeholder.com/100"}
+                      alt={user.username}
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-800">{user.username}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() =>
+                      user.requestSent
+                        ? cancelFriendRequest(user._id)
+                        : sendFriendRequest(user._id)
+                    }
+                    className={`px-4 py-2 rounded-full ${
+                      user.requestSent
+                        ? "bg-red-500 text-white"
+                        : "bg-green-500 text-white"
+                    }`}
+                  >
+                    {user.requestSent ? "Cancel Request" : "Send Request"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+      
+        <div className="md:hidden">
+          <IoMdNotifications
+            className="text-3xl cursor-pointer"
+            onClick={() => setShowRequests((prev) => !prev)}
+          />
+        </div>
+
+        {showRequests && (
+          <div className="md:hidden w-full mt-4">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Friend Requests
+            </h2>
+            <div className="space-y-4">
+              {friendRequests.length > 0 ? (
+                friendRequests.map((request) => (
+                  <div key={request._id} className="flex items-center space-x-4">
+                    <img
+                      className="w-16 h-16 rounded-full"
+                      src={request.profilePicture || "https://via.placeholder.com/100"}
+                      alt={request.username}
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-800">{request.username}</p>
+                      <p className="text-sm text-gray-600">{request.email}</p>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => acceptFriendRequest(request._id)}
+                        className="px-4 py-2 bg-green-500 text-white rounded-full"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => declineFriendRequest(request._id)}
+                        className="px-4 py-2 bg-red-500 text-white rounded-full"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-600">No pending friend requests.</p>
+              )}
+            </div>
+          </div>
+        )}
+        <FriendSuggestion/>
+      </div>
     </div>
-  </div>
   );
 }
 

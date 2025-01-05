@@ -152,6 +152,7 @@ export const registerController = async (req, res) => {
       });
     }
   };
+
   
   export const getFriendRequests = async (req, res) => {
   try {
@@ -201,10 +202,6 @@ export const registerController = async (req, res) => {
 
 
 
-
-  import User from "../models/userModel.js"; 
-
-
 export const getAllFriends = async (req, res) => {
   try {
    
@@ -227,3 +224,71 @@ export const getAllFriends = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+
+
+export const suggestFriends = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+ 
+    const user = await userModel.findById(userId)
+      .populate("friends", "_id")
+      .populate("friendRequests", "_id");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+
+    console.log("User:", user);
+
+    
+    const friendRequests = user.friendRequests.map((friendRequest) => friendRequest._id.toString());
+    const sentRequests = await userModel.find({ friendRequests: userId }).select("_id");
+    const sentRequestIds = sentRequests.map((u) => u._id.toString());
+
+  
+    console.log("Sent Requests:", sentRequestIds);
+
+    
+    const excludedIds = [
+      userId.toString(), 
+      ...user.friends.map((friend) => friend._id.toString()), 
+      ...friendRequests, 
+      ...sentRequestIds, 
+    ];
+
+
+    console.log("Exclusion List:", excludedIds);
+
+    let suggestedFriends = await userModel.find({
+      _id: { $nin: excludedIds },
+    }).select("_id username email");
+
+    // Log suggested friends
+    console.log("Suggested Friends:", suggestedFriends);
+
+    
+    if (suggestedFriends.length === 0) {
+      console.log("No suggestions found, relaxing exclusions.");
+      suggestedFriends = await userModel.find({
+        _id: { $ne: userId }, 
+      }).select("_id username email").limit(10); 
+
+    
+      console.log("Fallback Suggested Friends:", suggestedFriends);
+    }
+
+    res.status(200).json({
+      success: true,
+      suggestions: suggestedFriends, 
+    });
+  } catch (error) {
+    console.error("Error suggesting friends:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
